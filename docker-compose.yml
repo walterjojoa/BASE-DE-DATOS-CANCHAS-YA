@@ -1,0 +1,28 @@
+# Local PostgreSQL 16 with the CanchaYa schema and demo data.
+#   docker compose up -d
+#   connection: postgresql://canchaya:canchaya@localhost:5432/canchaya
+# The scripts run only the first time (when the volume is empty).
+# To start from scratch:  docker compose down -v && docker compose up -d
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: canchaya-db
+    environment:
+      POSTGRES_DB: canchaya
+      POSTGRES_USER: canchaya
+      POSTGRES_PASSWORD: canchaya
+      TZ: America/Bogota
+      PGTZ: America/Bogota
+    ports:
+      - "5432:5432"
+    volumes:
+      - canchaya-data:/var/lib/postgresql/data
+      - ./:/canchaya:ro
+      - ./docker/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U canchaya -d canchaya"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  canchaya-data:
