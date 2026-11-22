@@ -27,13 +27,14 @@ BEGIN;
 \ir migrations/V13__view_owner_monthly_income.sql
 \ir migrations/V14__view_field_daily_occupancy.sql
 \ir migrations/V15__function_available_slots.sql
+\ir migrations/V16__fields_zone_and_reference.sql
 COMMIT;
 
 \echo '>> Loading demo data'
 BEGIN;
 \ir seeds/S01__demo_users.sql
-\ir seeds/S02__demo_fields.sql
-\ir seeds/S03__demo_schedules.sql
+\ir seeds/S02__pasto_fields.sql
+\ir seeds/S03__pasto_schedules.sql
 \ir seeds/S04__demo_reservations.sql
 COMMIT;
 
