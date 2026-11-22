@@ -23,6 +23,8 @@
 | price_per_hour | NUMERIC(12,2) | No | > 0 | Precio por hora en COP |
 | owner_id | BIGINT | No | FK → users.id | Dueño de la cancha |
 | active | BOOLEAN | No | default `TRUE` | Si recibe reservas |
+| zone | VARCHAR(20) | Sí | `NORTH`, `CENTER`, `WEST`, `EAST`, `SOUTH` | Zona (sector) de Pasto |
+| reference_listing | BOOLEAN | No | default `FALSE` | `TRUE` = cancha real tomada de datos públicos, su dueño no está en la plataforma (precio y horario estimados) |
 
 ## `schedules` — horarios
 

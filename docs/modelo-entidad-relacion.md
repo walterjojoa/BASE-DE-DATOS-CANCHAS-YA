@@ -27,6 +27,8 @@ erDiagram
         numeric price_per_hour
         bigint  owner_id FK
         boolean active
+        varchar zone "NORTH | CENTER | WEST | EAST | SOUTH"
+        boolean reference_listing
     }
     SCHEDULES {
         bigint  id PK
