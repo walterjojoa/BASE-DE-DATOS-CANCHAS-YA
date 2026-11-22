@@ -14,20 +14,20 @@ BEGIN;
 -- Helper: ids used by the tests
 CREATE TEMP TABLE t AS
 SELECT
-    (SELECT id FROM fields WHERE name = 'Sintetica El Ejido')  AS ejido,
-    (SELECT id FROM fields WHERE name = 'Cancha Torobajo')     AS torobajo,
-    (SELECT id FROM fields WHERE name = 'Futbol 5 Pandiaco')   AS pandiaco,
+    (SELECT id FROM fields WHERE name = 'Canchas Sintéticas Monumental')  AS monumental,
+    (SELECT id FROM fields WHERE name = 'Cancha Sintética Mónaco')     AS monaco,
+    (SELECT id FROM fields WHERE name = 'Planeta Fútbol Cancha Sintética')   AS planeta,
     (SELECT id FROM users  WHERE email = 'player@canchaya.co') AS player,
     (SELECT id FROM users  WHERE email = 'mateo@canchaya.co')  AS mateo;
 
--- 1. Overlapping reservation is rejected (Mateo has El Ejido 19-21 in 2 days)
+-- 1. Overlapping reservation is rejected (Mateo has Monumental 19-21 in 2 days)
 DO $$
 DECLARE v t%ROWTYPE;
 BEGIN
     SELECT * INTO v FROM t;
     BEGIN
         INSERT INTO reservations (field_id, player_id, date, start_hour, end_hour, total_amount, deposit_amount)
-        VALUES (v.ejido, v.player, CURRENT_DATE + 2, 20, 22, 160000, 48000);
+        VALUES (v.monumental, v.player, CURRENT_DATE + 2, 20, 22, 160000, 48000);
         RAISE EXCEPTION 'TEST FAILED: overlapping reservation was accepted';
     EXCEPTION WHEN exclusion_violation THEN
         RAISE NOTICE 'OK  1 overlapping reservation rejected';
@@ -40,28 +40,28 @@ DECLARE v t%ROWTYPE;
 BEGIN
     SELECT * INTO v FROM t;
     INSERT INTO reservations (field_id, player_id, date, start_hour, end_hour, total_amount, deposit_amount)
-    VALUES (v.ejido, v.player, CURRENT_DATE + 2, 17, 19, 160000, 48000);
+    VALUES (v.monumental, v.player, CURRENT_DATE + 2, 17, 19, 160000, 48000);
     RAISE NOTICE 'OK  2 adjacent reservation accepted';
 END $$;
 
--- 3. A cancelled slot can be booked again (Laura cancelled Torobajo 18-20 in 6 days)
+-- 3. A cancelled slot can be booked again (Laura cancelled Mónaco 18-20 in 6 days)
 DO $$
 DECLARE v t%ROWTYPE;
 BEGIN
     SELECT * INTO v FROM t;
     INSERT INTO reservations (field_id, player_id, date, start_hour, end_hour, total_amount, deposit_amount)
-    VALUES (v.torobajo, v.player, CURRENT_DATE + 6, 18, 20, 140000, 42000);
+    VALUES (v.monaco, v.player, CURRENT_DATE + 6, 18, 20, 140000, 42000);
     RAISE NOTICE 'OK  3 cancelled slot booked again';
 END $$;
 
--- 4. Reservation outside opening hours is rejected (El Ejido closes at 22)
+-- 4. Reservation outside opening hours is rejected (Monumental closes at 22)
 DO $$
 DECLARE v t%ROWTYPE;
 BEGIN
     SELECT * INTO v FROM t;
     BEGIN
         INSERT INTO reservations (field_id, player_id, date, start_hour, end_hour, total_amount, deposit_amount)
-        VALUES (v.ejido, v.player, CURRENT_DATE + 10, 22, 23, 80000, 24000);
+        VALUES (v.monumental, v.player, CURRENT_DATE + 10, 22, 23, 80000, 24000);
         RAISE EXCEPTION 'TEST FAILED: reservation outside opening hours was accepted';
     EXCEPTION WHEN check_violation THEN
         RAISE NOTICE 'OK  4 reservation outside opening hours rejected';
@@ -73,15 +73,15 @@ DO $$
 DECLARE v t%ROWTYPE;
 BEGIN
     SELECT * INTO v FROM t;
-    UPDATE fields SET active = FALSE WHERE id = v.torobajo;
+    UPDATE fields SET active = FALSE WHERE id = v.monaco;
     BEGIN
         INSERT INTO reservations (field_id, player_id, date, start_hour, end_hour, total_amount, deposit_amount)
-        VALUES (v.torobajo, v.player, CURRENT_DATE + 10, 10, 11, 70000, 21000);
+        VALUES (v.monaco, v.player, CURRENT_DATE + 10, 10, 11, 70000, 21000);
         RAISE EXCEPTION 'TEST FAILED: inactive field accepted a reservation';
     EXCEPTION WHEN check_violation THEN
         RAISE NOTICE 'OK  5 inactive field rejected the reservation';
     END;
-    UPDATE fields SET active = TRUE WHERE id = v.torobajo;
+    UPDATE fields SET active = TRUE WHERE id = v.monaco;
 END $$;
 
 -- 6. Invalid hours (end before start) are rejected
@@ -91,7 +91,7 @@ BEGIN
     SELECT * INTO v FROM t;
     BEGIN
         INSERT INTO reservations (field_id, player_id, date, start_hour, end_hour, total_amount, deposit_amount)
-        VALUES (v.ejido, v.player, CURRENT_DATE + 10, 20, 18, 80000, 24000);
+        VALUES (v.monumental, v.player, CURRENT_DATE + 10, 20, 18, 80000, 24000);
         RAISE EXCEPTION 'TEST FAILED: end_hour < start_hour was accepted';
     EXCEPTION WHEN check_violation THEN
         RAISE NOTICE 'OK  6 invalid hours rejected';
@@ -105,14 +105,14 @@ BEGIN
     SELECT * INTO v FROM t;
     BEGIN
         INSERT INTO reservations (field_id, player_id, date, start_hour, end_hour, total_amount, deposit_amount)
-        VALUES (v.ejido, v.player, CURRENT_DATE + 10, 10, 11, 80000, 90000);
+        VALUES (v.monumental, v.player, CURRENT_DATE + 10, 10, 11, 80000, 90000);
         RAISE EXCEPTION 'TEST FAILED: deposit > total was accepted';
     EXCEPTION WHEN check_violation THEN
         RAISE NOTICE 'OK  7 deposit greater than total rejected';
     END;
 END $$;
 
--- 8. An approved payment confirms a pending reservation (Mateo, Pandiaco, in 5 days)
+-- 8. An approved payment confirms a pending reservation (Mateo, Planeta Fútbol, in 5 days)
 DO $$
 DECLARE v t%ROWTYPE; r reservations%ROWTYPE;
 BEGIN
@@ -150,7 +150,7 @@ DECLARE v t%ROWTYPE; r reservations%ROWTYPE;
 BEGIN
     SELECT * INTO v FROM t;
     SELECT * INTO r FROM reservations
-    WHERE field_id = v.ejido AND player_id = v.player AND date = CURRENT_DATE + 2;   -- created in test 2
+    WHERE field_id = v.monumental AND player_id = v.player AND date = CURRENT_DATE + 2;   -- created in test 2
     BEGIN
         INSERT INTO payments (reservation_id, amount, method, status, transaction_ref)
         VALUES (r.id, r.deposit_amount - 1, 'WOMPI', 'APPROVED', 'TEST-3');
@@ -196,16 +196,34 @@ DO $$
 DECLARE v t%ROWTYPE;
 BEGIN
     SELECT * INTO v FROM t;
-    IF (SELECT available FROM fn_available_slots(v.ejido, CURRENT_DATE + 2) WHERE slot_hour = 19) THEN
+    IF (SELECT available FROM fn_available_slots(v.monumental, CURRENT_DATE + 2) WHERE slot_hour = 19) THEN
         RAISE EXCEPTION 'TEST FAILED: 19:00 should be booked';
     END IF;
-    IF NOT (SELECT available FROM fn_available_slots(v.ejido, CURRENT_DATE + 2) WHERE slot_hour = 9) THEN
+    IF NOT (SELECT available FROM fn_available_slots(v.monumental, CURRENT_DATE + 2) WHERE slot_hour = 9) THEN
         RAISE EXCEPTION 'TEST FAILED: 09:00 should be free';
     END IF;
-    IF (SELECT count(*) FROM fn_available_slots(v.ejido, CURRENT_DATE + 2)) <> 14 THEN
-        RAISE EXCEPTION 'TEST FAILED: El Ejido should have 14 one-hour slots (08-22)';
+    IF (SELECT count(*) FROM fn_available_slots(v.monumental, CURRENT_DATE + 2)) <> 14 THEN
+        RAISE EXCEPTION 'TEST FAILED: Monumental should have 14 one-hour slots (08-22)';
     END IF;
     RAISE NOTICE 'OK 13 fn_available_slots';
+END $$;
+
+-- 14. Real Pasto fields: all are reference listings with a valid zone
+DO $$
+BEGIN
+    IF (SELECT count(*) FROM fields WHERE reference_listing AND zone IS NOT NULL) <> 38 THEN
+        RAISE EXCEPTION 'TEST FAILED: expected 38 reference fields with zone, got %',
+            (SELECT count(*) FROM fields WHERE reference_listing AND zone IS NOT NULL);
+    END IF;
+    IF (SELECT count(DISTINCT zone) FROM fields) <> 5 THEN
+        RAISE EXCEPTION 'TEST FAILED: expected fields in the 5 zones of Pasto';
+    END IF;
+    BEGIN
+        UPDATE fields SET zone = 'MARS' WHERE name = 'Canchas Sintéticas Monumental';
+        RAISE EXCEPTION 'TEST FAILED: invalid zone accepted';
+    EXCEPTION WHEN check_violation THEN
+        RAISE NOTICE 'OK 14 reference fields and zones';
+    END;
 END $$;
 
 ROLLBACK;
