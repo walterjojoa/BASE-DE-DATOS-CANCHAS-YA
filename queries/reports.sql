@@ -8,7 +8,7 @@ SELECT * FROM fn_available_slots(1, CURRENT_DATE + 2);
 -- 2. Upcoming confirmed reservations of an owner's fields
 SELECT reservation_id, date, start_hour, end_hour, field_name, player_name, remaining_amount
 FROM v_reservation_detail
-WHERE owner_name = 'Carlos Owner'
+WHERE owner_name = 'CanchaYa - Canchas de referencia'
   AND status = 'CONFIRMED'
   AND date >= CURRENT_DATE
 ORDER BY date, start_hour;
@@ -68,3 +68,19 @@ FROM reservations r
 JOIN fields f ON f.id = r.field_id
 GROUP BY f.name
 ORDER BY cancel_pct DESC;
+
+-- 11. Fields per zone of Pasto (reference listings vs. fields managed by their owners)
+SELECT zone,
+       count(*)                                  AS fields,
+       count(*) FILTER (WHERE reference_listing) AS reference_listings,
+       count(*) FILTER (WHERE NOT reference_listing) AS owner_managed
+FROM fields
+WHERE active
+GROUP BY zone
+ORDER BY fields DESC;
+
+-- 12. Fields of one zone, for the "search by sector" screen
+SELECT id, name, address, latitude, longitude, price_per_hour, reference_listing
+FROM fields
+WHERE active AND zone = 'NORTH'
+ORDER BY name;
