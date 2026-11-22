@@ -25,7 +25,8 @@ FROM (VALUES
     ('Cancha Torobajo',     'laura@canchaya.co',     6,  18,  20)
 ) AS v(field_name, player_email, day_offset, start_hour, end_hour)
 JOIN fields f ON f.name  = v.field_name
-JOIN users  u ON u.email = v.player_email;
+JOIN users  u ON u.email = v.player_email
+ORDER BY v.day_offset, v.start_hour, f.id;   -- ids follow the calendar
 
 -- Approved deposits for every past reservation and two future ones.
 INSERT INTO payments (reservation_id, amount, method, status, transaction_ref)
