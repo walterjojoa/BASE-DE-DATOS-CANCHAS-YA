@@ -7,8 +7,9 @@ Base de datos **PostgreSQL** de CanchaYa Pasto, la plataforma para reservar canc
 ## Contenido
 
 ```
-├── migrations/      Esquema en orden (V01 … V15): tablas, restricciones, triggers, vistas, funciones
-├── seeds/           Datos de prueba: usuarios, 4 canchas de Pasto, horarios, reservas y pagos
+├── migrations/      Esquema en orden (V01 … V16): tablas, restricciones, triggers, vistas, funciones
+├── data/            Canchas reales de Pasto (CSV) y generador de seeds
+├── seeds/           Usuarios de prueba, 38 canchas reales de Pasto, horarios, reservas y pagos
 ├── tests/           Pruebas de las reglas de negocio en SQL
 ├── queries/         Consultas de reportes para el dueño y el administrador
 ├── docs/            Modelo entidad-relación, diccionario de datos, conexión con el backend
@@ -77,7 +78,7 @@ En Neon también puedes pegar los archivos de `migrations/` en orden en el *SQL 
 psql "<conexión>" -f tests/test_business_rules.sql
 ```
 
-Corre 13 pruebas (reservas cruzadas, horarios, cancha inactiva, pagos dobles, montos, correos, horas libres…) dentro de una transacción que se deshace al final, así que no modifica los datos.
+Corre 14 pruebas (reservas cruzadas, horarios, cancha inactiva, pagos dobles, montos, correos, horas libres, zonas…) dentro de una transacción que se deshace al final, así que no modifica los datos.
 
 ### Desinstalar
 
@@ -85,18 +86,37 @@ Corre 13 pruebas (reservas cruzadas, horarios, cancha inactiva, pagos dobles, mo
 psql "<conexión>" -f uninstall.sql
 ```
 
-## Datos de prueba
+## Canchas sintéticas reales de Pasto
 
-Todos los usuarios tienen la contraseña **`canchaya123`** (hash BCrypt compatible con el backend):
+La base trae **38 canchas sintéticas reales de Pasto**, tomadas de las fichas públicas de Google Maps (noviembre de 2026) y clasificadas por **zona** de la ciudad:
+
+| Zona (`zone`) | Canchas |
+|---|---|
+| Norte (`NORTH`) | 8 |
+| Centro (`CENTER`) | 10 |
+| Occidente (`WEST`) | 2 |
+| Oriente (`EAST`) | 3 |
+| Sur (`SOUTH`) | 15 |
+
+- La fuente única es [`data/pasto_fields.csv`](data/pasto_fields.csv) (nombre, dirección, coordenadas, zona, horario). Los scripts `seeds/S02` y `seeds/S03` se generan con `python data/generate_field_seeds.py`; el backend carga el mismo CSV en desarrollo.
+- Son **negocios reales que no se han unido a CanchaYa**, por eso se marcan con `reference_listing = TRUE` y pertenecen a la cuenta `referencias@canchaya.co`, en la que nadie puede iniciar sesión.
+- **Precio ($80.000/hora) y horario (08:00–22:00) son estimados**: ninguna cancha publica su tarifa. Solo La Pasión del Fútbol publica su horario (06:00–22:00).
+- La zona se asignó por coordenadas con límites aproximados.
+- No se guardan teléfonos ni calificaciones de Google.
+- Se excluyeron canchas públicas o de colegios no confirmadas y un duplicado (La Cancha Club Deportivo = La Pelotera).
+
+## Usuarios y reservas de prueba
+
+Todos los usuarios de prueba tienen la contraseña **`canchaya123`** (hash BCrypt compatible con el backend):
 
 | Correo | Rol |
 |---|---|
-| `owner@canchaya.co` | OWNER — Sintética El Ejido, La Bombonera Pasto |
-| `owner2@canchaya.co` | OWNER — Cancha Torobajo, Fútbol 5 Pandiaco |
+| `owner@canchaya.co` | OWNER (sin canchas; puede publicar las suyas) |
 | `player@canchaya.co`, `laura@canchaya.co`, `mateo@canchaya.co` | PLAYER |
 | `admin@canchaya.co` | ADMIN |
+| `referencias@canchaya.co` | OWNER técnico de las canchas de referencia (sin acceso) |
 
-Las reservas de prueba usan fechas relativas a `CURRENT_DATE` (pasadas y futuras), con pagos aprobados, uno rechazado y una reserva cancelada.
+Las reservas y pagos de prueba son **ficticios** (las canchas no los conocen). Usan fechas relativas a `CURRENT_DATE` (pasadas y futuras), con pagos aprobados, uno rechazado y una reserva cancelada.
 
 ## Vistas y funciones
 
